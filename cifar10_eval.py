@@ -59,7 +59,7 @@ tf.app.flags.DEFINE_boolean('run_once', False,
                             """Whether to run eval only once.""")
 
 
-def eval_once(saver, summary_writer, top_k_op, logits, summary_op):
+def eval_once(saver, summary_writer, top_k_op, logits, summary_op, keep_prob):
     """Run Eval once.
 
     Args:
@@ -70,7 +70,6 @@ def eval_once(saver, summary_writer, top_k_op, logits, summary_op):
     """
     with tf.Session() as sess:
         ckpt = tf.train.latest_checkpoint(FLAGS.checkpoint_dir)
-        keep_prob = tf.placeholder(tf.float32)
         if ckpt:
             # Restores from checkpoint
             saver.restore(sess, ckpt)
@@ -104,7 +103,7 @@ def eval_once(saver, summary_writer, top_k_op, logits, summary_op):
             print('%s: precision @ 1 = %.5f' % (datetime.now(), precision))
 
             summary = tf.Summary()
-            summary.ParseFromString(sess.run(summary_op))
+            summary.ParseFromString(sess.run(summary_op, feed_dict={keep_prob: 1.0}))
             summary.value.add(tag='Precision @ 1', simple_value=precision)
             summary_writer.add_summary(summary, global_step)
         except Exception as e:  # pylint: disable=broad-except
@@ -141,7 +140,7 @@ def evaluate():
         summary_writer = tf.summary.FileWriter(FLAGS.eval_dir, g)
 
         while True:
-            eval_once(saver, summary_writer, top_k_op, logits, summary_op)
+            eval_once(saver, summary_writer, top_k_op, logits, summary_op, keep_prob)
             if FLAGS.run_once:
                 break
             time.sleep(FLAGS.eval_interval_secs)
