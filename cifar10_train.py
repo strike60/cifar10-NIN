@@ -45,7 +45,7 @@ import cifar10
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('train_dir', './cifar10_train',
+tf.app.flags.DEFINE_string('train_dir', '../cifar10_train',
                            """Directory where to write event logs """
                            """and checkpoint.""")
 tf.app.flags.DEFINE_integer('max_steps', 1000000,
@@ -60,6 +60,7 @@ def train():
     """Train CIFAR-10 for a number of steps."""
     with tf.Graph().as_default():
         global_step = tf.train.get_or_create_global_step()
+        keep_prob = tf.placeholder(dtype=tf.float32)
 
         # Get images and labels for CIFAR-10.
         # Force input pipeline to CPU:0 to avoid operations sometimes ending up on
@@ -69,7 +70,7 @@ def train():
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
-        logits = cifar10.inference(images)
+        logits = cifar10.inference(images, keep_prob)  
 
         # Calculate loss.
         loss = cifar10.loss(logits, labels)
@@ -112,7 +113,7 @@ def train():
             config=tf.ConfigProto(
                 log_device_placement=FLAGS.log_device_placement)) as mon_sess:
             while not mon_sess.should_stop():
-                mon_sess.run(train_op)
+                mon_sess.run(train_op, feed_dict={keep_prob: 0.5})
 
 
 def main(argv=None):  # pylint: disable=unused-argument

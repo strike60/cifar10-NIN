@@ -13,7 +13,7 @@ FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_integer(
     'batch_size', 128, """Number of images to process in a batch""")
 tf.app.flags.DEFINE_string(
-    'data_dir', './cifar10_data', """Path to the CIFAR-10 data directory.""")
+    'data_dir', '../cifar10_data', """Path to the CIFAR-10 data directory.""")
 
 IMAGE_SIZE = cifar10_input.IMAGE_SIZE
 NUM_CLASSES = cifar10_input.NUM_CLASSES
@@ -23,7 +23,7 @@ NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = cifar10_input.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL
 MOVING_AVERAGE_DECAY = 0.9999
 NUM_EPOCHS_PER_DECAY = 350.0
 LEARNING_RATE_DECAY_FACTOR = 0.1
-INITIAL_LEARNING_RATE = 0.001
+INITIAL_LEARNING_RATE = 0.0001
 conv_weight_decay = 0.00005
 
 TOWER_NAME = 'tower'
@@ -71,7 +71,7 @@ def inputs(eval_data):
     return images, labels
 
 
-def inference(images):
+def inference(images, keep_prob):
         # images size is [batch,32,32,3]
     with tf.variable_scope('conv1') as scope:
         kernel = _variable_with_weight_decay(
@@ -111,7 +111,7 @@ def inference(images):
 
         # pool1 size is [batch,16,16,96]
     with tf.variable_scope('dropout1') as scope:
-        dropout = tf.nn.dropout(pool1, 0.5, name='dropout1')
+        dropout = tf.nn.dropout(pool1, keep_prob, name='dropout1')
 
         # dropout size is [batch,16,16,96]
     with tf.variable_scope('conv2') as scope:
@@ -153,7 +153,7 @@ def inference(images):
 
         # pool2 size is [batch,8,8,192]
     with tf.variable_scope('dropout2') as scope:
-        dropout2 = tf.nn.dropout(pool2, 0.5, name='dropout2')
+        dropout2 = tf.nn.dropout(pool2, keep_prob, name='dropout2')
         # dropout2 size is [batch,8,8,192]
     with tf.variable_scope('conv3') as scope:
         kernel = _variable_with_weight_decay(
@@ -186,9 +186,9 @@ def inference(images):
         pre_activation = tf.nn.bias_add(conv, biases)
         cccp6 = tf.nn.relu(pre_activation, name=scope.name)
         _activation_summary(cccp6)
-    
+
         # cccp6 size is [batch,8,8,10]
-    logits = tf.reduce_mean(cccp6, [1,2])
+    logits = tf.reduce_mean(cccp6, [1, 2])
     return logits
 
 
@@ -243,34 +243,36 @@ def train(total_loss, global_step):
             train_op = tf.no_op(name='train')
         return train_op
 
+
 def maybe_download_and_extract():
-  """Download and extract the tarball from Alex's website."""
-  dest_directory = FLAGS.data_dir
-  if not os.path.exists(dest_directory):
-    os.makedirs(dest_directory)
-  filename = DATA_URL.split('/')[-1]
-  filepath = os.path.join(dest_directory, filename)
-  if not os.path.exists(filepath):
-    def _progress(count, block_size, total_size):
-      sys.stdout.write('\r>> Downloading %s %.1f%%' % (filename,
-          float(count * block_size) / float(total_size) * 100.0))
-      sys.stdout.flush()
-    filepath, _ = urllib.request.urlretrieve(DATA_URL, filepath, _progress)
-    print()
-    statinfo = os.stat(filepath)
-    print('Successfully downloaded', filename, statinfo.st_size, 'bytes.')
-  extracted_dir_path = os.path.join(dest_directory, 'cifar-10-batches-bin')
-  if not os.path.exists(extracted_dir_path):
-    tarfile.open(filepath, 'r:gz').extractall(dest_directory)
+    """Download and extract the tarball from Alex's website."""
+    dest_directory = FLAGS.data_dir
+    if not os.path.exists(dest_directory):
+        os.makedirs(dest_directory)
+    filename = DATA_URL.split('/')[-1]
+    filepath = os.path.join(dest_directory, filename)
+    if not os.path.exists(filepath):
+        def _progress(count, block_size, total_size):
+            sys.stdout.write('\r>> Downloading %s %.1f%%' % (filename,
+                                                             float(count * block_size) / float(total_size) * 100.0))
+            sys.stdout.flush()
+        filepath, _ = urllib.request.urlretrieve(DATA_URL, filepath, _progress)
+        print()
+        statinfo = os.stat(filepath)
+        print('Successfully downloaded', filename, statinfo.st_size, 'bytes.')
+    extracted_dir_path = os.path.join(dest_directory, 'cifar-10-batches-bin')
+    if not os.path.exists(extracted_dir_path):
+        tarfile.open(filepath, 'r:gz').extractall(dest_directory)
 
-if __name__=="__main__":
-    a = np.ones([10, 32, 32, 3], dtype=np.float32)
-    c = tf.constant([1, 2, 3, 4, 5, 6, 7, 8, 9, 9], dtype=tf.int32)
-    a_ = tf.constant(a)
-    b = inference(a_)
-    d = tf.nn.in_top_k(b, c, 1)
-    with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
-        print(sess.run(b))
 
-        print(np.sum(sess.run(d)))
+# if __name__ == "__main__":
+#     a = np.ones([10, 32, 32, 3], dtype=np.float32)
+#     c = tf.constant([1, 2, 3, 4, 5, 6, 7, 8, 9, 9], dtype=tf.int32)
+#     a_ = tf.constant(a)
+#     b = inference(a_)
+#     d = tf.nn.in_top_k(b, c, 1)
+#     with tf.Session() as sess:
+#         sess.run(tf.global_variables_initializer())
+#         print(sess.run(b))
+
+#         print(np.sum(sess.run(d)))
