@@ -8,12 +8,12 @@ The hyperparameters is selected the same as :https://gist.github.com/ebenolson/9
 
 name: Network in Network CIFAR10 Model
 
-framework: tensorflow 
+framework: tensorflow
 
 ## Descriptions
 
 This model is a 3 layer [Network in Network](http://openreview.net/document/9b05a3bb-3a5e-49cb-91f7-0f482af65aea) model trained on CIFAR10 dataset.
 
-The performance of this model on validation set is 87.26% after 136k steps.
+The performance of this model on validation set is 89.41%.
 
 The detailed descriptions are in the paper [Network in Network](http://openreview.net/document/9b05a3bb-3a5e-49cb-91f7-0f482af65aea)
